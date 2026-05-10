@@ -1,8 +1,10 @@
 import express from 'express';
 import { verifyTransaction, getTransactionStatus } from '../lib/transactionVerifier';
 import { b402Service } from '../lib/b402Service';
+import { getBackendConfig } from '../config';
 
 const router = express.Router();
+const config = getBackendConfig();
 
 // Verify payment using b402 SDK and on-chain verification
 router.post('/verify', async (req, res) => {
@@ -13,9 +15,9 @@ router.post('/verify', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Get Base RPC URL from environment
-    const baseRpcUrl = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
-    const recipientAddress = process.env.RECIPIENT_ADDRESS;
+    // Get configuration from config system
+    const baseRpcUrl = config.baseRpcUrl;
+    const recipientAddress = config.recipientAddress;
 
     if (!recipientAddress) {
       console.error('RECIPIENT_ADDRESS not configured');
@@ -91,7 +93,7 @@ router.get('/status/:txHash', async (req, res) => {
   try {
     const { txHash } = req.params;
     
-    const baseRpcUrl = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
+    const baseRpcUrl = config.baseRpcUrl;
     
     const status = await getTransactionStatus(txHash, baseRpcUrl);
     

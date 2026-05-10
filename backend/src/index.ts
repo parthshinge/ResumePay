@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { B402 } from '@b402ai/sdk';
+import { validateEnv, getEnv } from './lib/env';
+import { getBackendConfig } from './config';
 import uploadRoutes from './routes/upload';
 import paymentRoutes from './routes/payment';
 import reviewRoutes from './routes/review';
@@ -9,31 +11,44 @@ import adminRoutes from './routes/admin';
 
 dotenv.config();
 
+// Validate environment variables on startup
+try {
+  validateEnv();
+  console.log('✅ Environment variables validated successfully');
+} catch (error) {
+  console.error('❌ Environment validation failed:');
+  console.error(error instanceof Error ? error.message : error);
+  process.exit(1);
+}
+
+const config = getBackendConfig();
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: config.corsOrigin,
+  credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Initialize b402 SDK
 let b402: B402 | undefined;
-if (process.env.WORKER_PRIVATE_KEY) {
+if (config.workerPrivateKey) {
   try {
     b402 = new B402({
-      privateKey: process.env.WORKER_PRIVATE_KEY,
-      chainId: 8453, // Base
-      rpcUrl: process.env.BASE_RPC_URL,
-      facilitatorUrl: process.env.FACILITATOR_URL,
-      backendApiUrl: process.env.BACKEND_API_URL,
+      privateKey: config.workerPrivateKey,
+      chainId: config.chainId,
+      rpcUrl: config.baseRpcUrl,
+      facilitatorUrl: config.facilitatorUrl,
+      backendApiUrl: config.backendApiUrl,
     });
-    console.log('b402 SDK initialized successfully');
+    console.log('✅ b402 SDK initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize b402 SDK:', error);
+    console.error('❌ Failed to initialize b402 SDK:', error);
   }
 } else {
-  console.warn('WORKER_PRIVATE_KEY is not set; payment verification is running in mock mode.');
+  console.warn('⚠️  WORKER_PRIVATE_KEY is not set; payment verification is running without b402 SDK.');
 }
 
 // Make b402 available globally
@@ -50,10 +65,18 @@ app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
+    chainId: config.chainId,
+  });
 });
 
-app.listen(PORT, () => {
-  console.log(`ResumePay backend running on port ${PORT}`);
-  console.log(`Base chain ID: 8453`);
+app.listen(config.port, () => {
+  console.log(`🚀 ResumePay backend running on port ${config.port}`);
+  console.log(`📦 Environment: ${config.nodeEnv}`);
+  console.log(`⛓️  Base chain ID: ${config.chainId}`);
+  console.log(`🔗 Base RPC: ${config.baseRpcUrl}`);
+  console.log(`🌐 CORS Origin: ${config.corsOrigin}`);
 });

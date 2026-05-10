@@ -1,5 +1,6 @@
 import { B402 } from '@b402ai/sdk';
 import { ethers } from 'ethers';
+import { getBackendConfig } from '../config';
 
 // USDC contract address on Base
 const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bA029040';
@@ -14,11 +15,12 @@ export class B402Service {
 
   private initialize() {
     try {
-      const privateKey = process.env.WORKER_PRIVATE_KEY;
-      const chainId = parseInt(process.env.CHAIN_ID || '8453');
-      const rpcUrl = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
-      const facilitatorUrl = process.env.FACILITATOR_URL;
-      const backendApiUrl = process.env.BACKEND_API_URL;
+      const config = getBackendConfig();
+      const privateKey = config.workerPrivateKey;
+      const chainId = config.chainId;
+      const rpcUrl = config.baseRpcUrl;
+      const facilitatorUrl = config.facilitatorUrl;
+      const backendApiUrl = config.backendApiUrl;
 
       if (!privateKey) {
         console.warn('WORKER_PRIVATE_KEY not set, b402 SDK will not be initialized');

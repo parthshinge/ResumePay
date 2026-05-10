@@ -2,40 +2,42 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs/promises';
+import fs from 'fs';
+import { getBackendConfig } from '../config';
 
 const router = express.Router();
-const uploadDir = process.env.UPLOAD_DIR || (process.env.VERCEL ? '/tmp/uploads' : './uploads');
+const config = getBackendConfig();
 
 // Configure multer for file uploads
+const uploadDir = config.uploadDir;
+const maxFileSize = config.maxFileSize;
+
+// Ensure upload directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (error) {
-      cb(error as Error, uploadDir);
-    }
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const uniqueId = uuidv4();
-    const ext = path.extname(file.originalname);
-    cb(null, `${uniqueId}${ext}`);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   },
 });
 
 const upload = multer({
   storage,
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880'), // 5MB default
+    fileSize: maxFileSize,
   },
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['application/pdf'];
-    if (!allowedTypes.includes(file.mimetype)) {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
       cb(new Error('Only PDF files are allowed'));
-      return;
     }
-    cb(null, true);
   },
 });
 
@@ -46,18 +48,15 @@ router.post('/', upload.single('resume'), async (req, res) => {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
-    const resumeData = {
-      id: uuidv4(),
-      originalName: req.file.originalname,
-      size: req.file.size,
-      mimeType: req.file.mimetype,
-      filePath: req.file.path,
-      uploadedAt: new Date(),
-    };
+    const resumeId = uuidv4();
+    const filePath = req.file.path;
+    const fileSize = req.file.size;
+    const originalName = req.file.originalname;
 
     // Return 402 Payment Required with payment details
-    const paymentAmount = process.env.PAYMENT_AMOUNT_USDC || '5';
-    
+    const paymentAmount = config.paymentAmountUsdc;
+    const recipientAddress = config.recipientAddress;
+
     res.status(402).json({
       error: 'Payment Required',
       message: 'Please complete payment to process your resume review',
@@ -66,10 +65,17 @@ router.post('/', upload.single('resume'), async (req, res) => {
         token: 'USDC',
         chain: 'base',
         chainId: 8453,
-        recipientAddress: process.env.RECIPIENT_ADDRESS || '0x...',
-        resumeId: resumeData.id,
+        recipientAddress: recipientAddress,
+        resumeId: resumeId,
       },
-      resume: resumeData,
+      resume: {
+        id: resumeId,
+        filePath: filePath,
+        originalName: originalName,
+        fileSize: fileSize,
+        mimeType: req.file.mimetype,
+        uploadedAt: new Date(),
+      },
     });
   } catch (error) {
     console.error('Upload error:', error);
