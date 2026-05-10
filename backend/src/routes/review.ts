@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { OpenAI } from 'openai';
 import pdfParse from 'pdf-parse';
 import PDFDocument from 'pdfkit';
@@ -14,7 +14,7 @@ const openai = new OpenAI({
 });
 
 // POST /api/review/generate
-router.post('/generate', async (req, res) => {
+router.post('/generate', async (req: Request, res: Response) => {
   try {
     const { resumeId, filePath } = req.body;
 
@@ -70,15 +70,15 @@ router.post('/generate', async (req, res) => {
 });
 
 // GET /api/review/report/:resumeId
-router.get('/report/:resumeId', async (req, res) => {
+router.get('/report/:resumeId', async (req: Request, res: Response) => {
   try {
     const { resumeId } = req.params;
 
     // Generate PDF report
     const doc = new PDFDocument();
-    const chunks: any[] = [];
+    const chunks: Buffer[] = [];
 
-    doc.on('data', (chunk) => chunks.push(chunk));
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk));
     doc.on('end', () => {
       const pdfBuffer = Buffer.concat(chunks);
       res.setHeader('Content-Type', 'application/pdf');

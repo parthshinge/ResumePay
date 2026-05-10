@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { getBackendConfig } from '../config';
 
 const router = express.Router();
@@ -8,7 +8,7 @@ type PaymentRecord = Record<string, unknown>;
 type ReviewRecord = Record<string, unknown>;
 
 // Get dashboard analytics
-router.get('/dashboard', async (req, res) => {
+router.get('/dashboard', async (req: Request, res: Response) => {
   try {
     // Mock dashboard data
     const dashboardData = {
@@ -29,7 +29,7 @@ router.get('/dashboard', async (req, res) => {
 });
 
 // Get payment history
-router.get('/payments', async (req, res) => {
+router.get('/payments', async (req: Request, res: Response) => {
   try {
     // Mock payments data
     const payments: PaymentRecord[] = [];
@@ -42,7 +42,7 @@ router.get('/payments', async (req, res) => {
 });
 
 // Get review history
-router.get('/reviews', async (req, res) => {
+router.get('/reviews', async (req: Request, res: Response) => {
   try {
     // Mock reviews data
     const reviews: ReviewRecord[] = [];

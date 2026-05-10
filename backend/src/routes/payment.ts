@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { verifyTransaction, getTransactionStatus } from '../lib/transactionVerifier';
 import { b402Service } from '../lib/b402Service';
 import { getBackendConfig } from '../config';
@@ -8,7 +8,7 @@ const router = express.Router();
 const config = getBackendConfig();
 
 // Verify payment using b402 SDK and on-chain verification
-router.post('/verify', async (req, res) => {
+router.post('/verify', async (req: Request, res: Response) => {
   try {
     const { txHash, walletAddress, amount, resumeId } = req.body;
 
@@ -118,7 +118,7 @@ router.post('/verify', async (req, res) => {
 });
 
 // Get payment status
-router.get('/status/:txHash', async (req, res) => {
+router.get('/status/:txHash', async (req: Request, res: Response) => {
   try {
     const { txHash } = req.params;
     
