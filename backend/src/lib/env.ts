@@ -1,8 +1,11 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { envLogger } from './logger';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+envLogger.info('Environment variables loaded');
 
 interface EnvConfig {
   // Server Configuration

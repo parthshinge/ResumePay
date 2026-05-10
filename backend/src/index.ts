@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { B402 } from '@b402ai/sdk';
 import { validateEnv, getEnv } from './lib/env';
 import { getBackendConfig } from './config';
+import { envLogger } from './lib/logger';
 import uploadRoutes from './routes/upload';
 import paymentRoutes from './routes/payment';
 import reviewRoutes from './routes/review';
@@ -14,8 +15,9 @@ dotenv.config();
 // Validate environment variables on startup
 try {
   validateEnv();
-  console.log('✅ Environment variables validated successfully');
+  envLogger.info('✅ Environment variables validated successfully');
 } catch (error) {
+  envLogger.error('❌ Environment validation failed', error);
   console.error('❌ Environment validation failed:');
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
@@ -70,6 +72,22 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
     chainId: config.chainId,
+    version: '1.0.0',
+  });
+});
+
+// API health check (for load balancers and monitoring)
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    environment: config.nodeEnv,
+    chainId: config.chainId,
+    baseRpcUrl: config.baseRpcUrl,
+    b402Initialized: global.b402 !== undefined,
+    openaiConfigured: config.openaiApiKey.startsWith('sk-'),
+    recipientConfigured: config.recipientAddress.startsWith('0x'),
+    version: '1.0.0',
   });
 });
 

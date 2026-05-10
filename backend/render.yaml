@@ -13,6 +13,8 @@ services:
         value: 8453
       - key: BASE_RPC_URL
         value: https://mainnet.base.org
+      - key: BASESCAN_API_KEY
+        value: # Add your BaseScan API key
       - key: WORKER_PRIVATE_KEY
         generate: true
       - key: FACILITATOR_URL
@@ -32,6 +34,12 @@ services:
       - key: MAX_FILE_SIZE
         value: 5242880
       - key: UPLOAD_DIR
-        value: ./uploads
+        value: /tmp/uploads
       - key: CORS_ORIGIN
         value: # Add your frontend URL
+    healthCheck:
+      path: /health
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
