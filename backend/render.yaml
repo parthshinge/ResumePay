@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: resumepay-backend
+    env: node
+    buildCommand: cd backend && npm install && npm run build
+    startCommand: cd backend && npm start
+    envVars:
+      - key: PORT
+        value: 3001
+      - key: NODE_ENV
+        value: production
+      - key: CHAIN_ID
+        value: 8453
+      - key: BASE_RPC_URL
+        value: https://mainnet.base.org
+      - key: WORKER_PRIVATE_KEY
+        generate: true
+      - key: FACILITATOR_URL
+        value: https://facilitator.b402.ai
+      - key: BACKEND_API_URL
+        value: https://api.b402.ai
+      - key: PAYMENT_AMOUNT_USDC
+        value: 5
+      - key: RECIPIENT_ADDRESS
+        value: # Add your recipient address
+      - key: OPENAI_API_KEY
+        value: # Add your OpenAI API key
+      - key: DATABASE_URL
+        value: # Add your database URL
+      - key: REDIS_URL
+        value: # Add your Redis URL
+      - key: MAX_FILE_SIZE
+        value: 5242880
+      - key: UPLOAD_DIR
+        value: ./uploads
+      - key: CORS_ORIGIN
+        value: # Add your frontend URL

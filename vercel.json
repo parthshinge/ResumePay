@@ -1,0 +1,12 @@
+{
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/.next",
+  "framework": "nextjs",
+  "installCommand": "cd frontend && npm install",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "@backend-url",
+    "NEXT_PUBLIC_CHAIN_ID": "8453",
+    "NEXT_PUBLIC_BASESCAN_URL": "https://basescan.org",
+    "NEXT_PUBLIC_PAYMENT_AMOUNT_USDC": "5"
+  }
+}
