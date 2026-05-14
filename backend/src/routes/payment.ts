@@ -7,39 +7,41 @@ import { paymentLogger, transactionLogger, b402Logger } from '../lib/logger';
 const router = express.Router();
 const config = getBackendConfig();
 
-// Verify payment using b402 SDK and on-chain verification
+// Verify payment using b402 SDK status plus Base on-chain verification.
 router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { txHash, walletAddress, amount, resumeId } = req.body;
+    const { txHash, walletAddress, amount, resumeId, recipientAddress, demoTransfer } = req.body;
 
     paymentLogger.info('Payment verification request received', { txHash, walletAddress, amount, resumeId });
 
-    if (!txHash || !walletAddress || !amount) {
+    if (!txHash || !walletAddress || amount === undefined || amount === null) {
       paymentLogger.warn('Missing required fields in payment verification');
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Get configuration from config system
-    const baseRpcUrl = config.baseRpcUrl;
-    const recipientAddress = config.recipientAddress;
-
-    if (!recipientAddress) {
-      paymentLogger.error('RECIPIENT_ADDRESS not configured');
+    const expectedRecipient = recipientAddress || config.recipientAddress;
+    if (!expectedRecipient) {
+      paymentLogger.error('Recipient address not configured');
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    paymentLogger.info('Starting on-chain transaction verification', { txHash, recipientAddress, amount });
+    const expectedAmount = demoTransfer ? '0' : String(amount);
+    paymentLogger.info('Starting Base transaction verification', {
+      txHash,
+      expectedRecipient,
+      expectedAmount,
+      demoTransfer,
+    });
 
-    // Verify transaction on-chain
     const verification = await verifyTransaction(
       txHash,
-      recipientAddress,
-      amount,
-      baseRpcUrl
+      expectedRecipient,
+      expectedAmount,
+      config.baseRpcUrl
     );
 
-    transactionLogger.info('Transaction verification result', { 
-      txHash, 
+    transactionLogger.info('Transaction verification result', {
+      txHash,
       verified: verification.verified,
       from: verification.from,
       to: verification.to,
@@ -48,10 +50,10 @@ router.post('/verify', async (req: Request, res: Response) => {
     });
 
     if (!verification.verified) {
-      paymentLogger.warn('Transaction verification failed', { 
-        txHash, 
+      paymentLogger.warn('Transaction verification failed', {
+        txHash,
         error: verification.error,
-        details: verification 
+        details: verification,
       });
       return res.status(400).json({
         success: false,
@@ -60,11 +62,10 @@ router.post('/verify', async (req: Request, res: Response) => {
       });
     }
 
-    // Verify the sender matches the connected wallet
-    if (verification.from.toLowerCase() !== walletAddress.toLowerCase()) {
-      paymentLogger.warn('Wallet address mismatch', { 
-        expected: walletAddress, 
-        actual: verification.from 
+    if (verification.from.toLowerCase() !== String(walletAddress).toLowerCase()) {
+      paymentLogger.warn('Wallet address mismatch', {
+        expected: walletAddress,
+        actual: verification.from,
       });
       return res.status(400).json({
         success: false,
@@ -74,25 +75,20 @@ router.post('/verify', async (req: Request, res: Response) => {
       });
     }
 
-    paymentLogger.info('Wallet address verified successfully', { walletAddress });
-
-    // Use b402 SDK for additional verification if available
     if (b402Service.isInitialized()) {
       try {
         b402Logger.info('Performing b402 SDK status check');
         const b402Status = await b402Service.getStatus();
         b402Logger.info('b402 SDK status check passed', b402Status);
       } catch (b402Error) {
-        b402Logger.warn('b402 SDK status check failed, using on-chain verification only', b402Error);
-        // Continue with on-chain verification even if b402 fails
+        b402Logger.warn('b402 SDK status check failed, using Base verification only', b402Error);
       }
     } else {
-      b402Logger.warn('b402 SDK not initialized, using on-chain verification only');
+      b402Logger.warn('b402 SDK not initialized, using Base verification only');
     }
 
     paymentLogger.info('Payment verified successfully', { txHash, resumeId });
 
-    // Payment verified successfully
     res.json({
       success: true,
       message: 'Payment verified successfully',
@@ -101,18 +97,21 @@ router.post('/verify', async (req: Request, res: Response) => {
         walletAddress: verification.from,
         recipientAddress: verification.to,
         amount: verification.amount,
+        token: 'USDC',
+        chain: 'base',
         status: 'confirmed',
         verifiedAt: new Date().toISOString(),
         blockNumber: verification.blockNumber,
         timestamp: verification.timestamp,
+        demoTransfer: Boolean(demoTransfer),
       },
       resumeId,
     });
   } catch (error) {
     paymentLogger.error('Payment verification error', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to verify payment',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
@@ -121,11 +120,8 @@ router.post('/verify', async (req: Request, res: Response) => {
 router.get('/status/:txHash', async (req: Request, res: Response) => {
   try {
     const { txHash } = req.params;
-    
-    const baseRpcUrl = config.baseRpcUrl;
-    
-    const status = await getTransactionStatus(txHash, baseRpcUrl);
-    
+    const status = await getTransactionStatus(txHash, config.baseRpcUrl);
+
     res.json({
       txHash,
       status: status.status,

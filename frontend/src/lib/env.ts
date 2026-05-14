@@ -16,13 +16,9 @@ interface FrontendEnvConfig {
   NEXT_PUBLIC_RECIPIENT_ADDRESS?: string;
 }
 
-// Required frontend environment variables (must start with NEXT_PUBLIC_)
-const REQUIRED_ENV_VARS: (keyof FrontendEnvConfig)[] = [
-  'NEXT_PUBLIC_CHAIN_ID',
-  'NEXT_PUBLIC_BASESCAN_URL',
-  'NEXT_PUBLIC_API_URL',
-  'NEXT_PUBLIC_PAYMENT_AMOUNT_USDC',
-];
+// Public env vars have production-safe defaults so Vercel previews can build
+// without a separate env setup step.
+const REQUIRED_ENV_VARS: (keyof FrontendEnvConfig)[] = [];
 
 // Optional frontend environment variables
 const OPTIONAL_ENV_VARS: (keyof FrontendEnvConfig)[] = [
@@ -61,15 +57,15 @@ export function validateFrontendEnv(): FrontendEnvConfig {
     throw new Error('Invalid NEXT_PUBLIC_CHAIN_ID: must be a number');
   }
   
-  env.NEXT_PUBLIC_BASESCAN_URL = process.env.NEXT_PUBLIC_BASESCAN_URL || '';
+  env.NEXT_PUBLIC_BASESCAN_URL = process.env.NEXT_PUBLIC_BASESCAN_URL || 'https://basescan.org';
   if (!env.NEXT_PUBLIC_BASESCAN_URL.startsWith('http')) {
     throw new Error('Invalid NEXT_PUBLIC_BASESCAN_URL: must start with http:// or https://');
   }
   
   // Backend Configuration
-  env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-  if (!env.NEXT_PUBLIC_API_URL.startsWith('http')) {
-    throw new Error('Invalid NEXT_PUBLIC_API_URL: must start with http:// or https://');
+  env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || '/_/backend';
+  if (!env.NEXT_PUBLIC_API_URL.startsWith('http') && !env.NEXT_PUBLIC_API_URL.startsWith('/')) {
+    throw new Error('Invalid NEXT_PUBLIC_API_URL: must start with http://, https://, or /');
   }
   
   // Payment Configuration
@@ -101,7 +97,7 @@ export function getFrontendEnv(): FrontendEnvConfig {
   return {
     NEXT_PUBLIC_CHAIN_ID: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '8453', 10),
     NEXT_PUBLIC_BASESCAN_URL: process.env.NEXT_PUBLIC_BASESCAN_URL || 'https://basescan.org',
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '/_/backend',
     NEXT_PUBLIC_PAYMENT_AMOUNT_USDC: process.env.NEXT_PUBLIC_PAYMENT_AMOUNT_USDC || '5',
     NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
     NEXT_PUBLIC_RECIPIENT_ADDRESS: process.env.NEXT_PUBLIC_RECIPIENT_ADDRESS,

@@ -107,6 +107,20 @@ export default function ReviewResults({
         </p>
       </div>
 
+      {paymentData?.payment?.txHash && (
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+          <p className="text-sm font-semibold text-green-900">Payment transaction</p>
+          <a
+            href={`https://basescan.org/tx/${paymentData.payment.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 block break-all text-sm text-primary-700 hover:text-primary-800"
+          >
+            {paymentData.payment.txHash}
+          </a>
+        </div>
+      )}
+
       {/* Overall Score */}
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl p-6 mb-6 text-white">
         <div className="flex items-center justify-between">

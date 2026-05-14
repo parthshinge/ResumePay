@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 
 // USDC contract address on Base
-const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bA029040';
+const USDC_CONTRACT_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
 // Minimal ABI for USDC transfer
 const ERC20_ABI = [
