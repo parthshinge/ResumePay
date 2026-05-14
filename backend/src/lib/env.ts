@@ -43,22 +43,9 @@ interface EnvConfig {
   CORS_ORIGIN: string;
 }
 
-// Required environment variables
-const REQUIRED_ENV_VARS: (keyof EnvConfig)[] = [
-  'PORT',
-  'NODE_ENV',
-  'CHAIN_ID',
-  'BASE_RPC_URL',
-  'WORKER_PRIVATE_KEY',
-  'FACILITATOR_URL',
-  'BACKEND_API_URL',
-  'PAYMENT_AMOUNT_USDC',
-  'RECIPIENT_ADDRESS',
-  'OPENAI_API_KEY',
-  'MAX_FILE_SIZE',
-  'UPLOAD_DIR',
-  'CORS_ORIGIN',
-];
+// The backend can boot with safe defaults. Secrets are validated at the feature
+// boundary that needs them, so health/upload/payment demo routes keep working.
+const REQUIRED_ENV_VARS: (keyof EnvConfig)[] = [];
 
 // Optional environment variables
 const OPTIONAL_ENV_VARS: (keyof EnvConfig)[] = [
@@ -109,7 +96,7 @@ export function validateEnv(): EnvConfig {
     throw new Error('Invalid CHAIN_ID: must be a number');
   }
   
-  env.BASE_RPC_URL = process.env.BASE_RPC_URL || '';
+  env.BASE_RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
   if (!env.BASE_RPC_URL.startsWith('http')) {
     throw new Error('Invalid BASE_RPC_URL: must start with http:// or https://');
   }
@@ -118,19 +105,19 @@ export function validateEnv(): EnvConfig {
   
   // b402 SDK Configuration
   env.WORKER_PRIVATE_KEY = process.env.WORKER_PRIVATE_KEY || '';
-  if (!env.WORKER_PRIVATE_KEY.startsWith('0x')) {
+  if (env.WORKER_PRIVATE_KEY && !env.WORKER_PRIVATE_KEY.startsWith('0x')) {
     throw new Error('Invalid WORKER_PRIVATE_KEY: must start with 0x');
   }
-  if (env.WORKER_PRIVATE_KEY.length !== 66) {
+  if (env.WORKER_PRIVATE_KEY && env.WORKER_PRIVATE_KEY.length !== 66) {
     throw new Error('Invalid WORKER_PRIVATE_KEY: must be 66 characters (32 bytes hex)');
   }
   
-  env.FACILITATOR_URL = process.env.FACILITATOR_URL || '';
+  env.FACILITATOR_URL = process.env.FACILITATOR_URL || 'https://b402-facilitator-base-62092339396.us-central1.run.app';
   if (!env.FACILITATOR_URL.startsWith('http')) {
     throw new Error('Invalid FACILITATOR_URL: must start with http:// or https://');
   }
   
-  env.BACKEND_API_URL = process.env.BACKEND_API_URL || '';
+  env.BACKEND_API_URL = process.env.BACKEND_API_URL || 'https://b402-base-api-62092339396.us-central1.run.app';
   if (!env.BACKEND_API_URL.startsWith('http')) {
     throw new Error('Invalid BACKEND_API_URL: must start with http:// or https://');
   }
@@ -142,16 +129,16 @@ export function validateEnv(): EnvConfig {
   }
   
   env.RECIPIENT_ADDRESS = process.env.RECIPIENT_ADDRESS || '';
-  if (!env.RECIPIENT_ADDRESS.startsWith('0x')) {
+  if (env.RECIPIENT_ADDRESS && !env.RECIPIENT_ADDRESS.startsWith('0x')) {
     throw new Error('Invalid RECIPIENT_ADDRESS: must start with 0x');
   }
-  if (env.RECIPIENT_ADDRESS.length !== 42) {
+  if (env.RECIPIENT_ADDRESS && env.RECIPIENT_ADDRESS.length !== 42) {
     throw new Error('Invalid RECIPIENT_ADDRESS: must be 42 characters (20 bytes hex)');
   }
   
   // OpenAI Configuration
   env.OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-  if (!env.OPENAI_API_KEY.startsWith('sk-')) {
+  if (env.OPENAI_API_KEY && !env.OPENAI_API_KEY.startsWith('sk-')) {
     throw new Error('Invalid OPENAI_API_KEY: must start with sk-');
   }
   
@@ -165,11 +152,11 @@ export function validateEnv(): EnvConfig {
     throw new Error('Invalid MAX_FILE_SIZE: must be a number');
   }
   
-  env.UPLOAD_DIR = process.env.UPLOAD_DIR || './uploads';
+  env.UPLOAD_DIR = process.env.UPLOAD_DIR || (process.env.VERCEL ? '/tmp/uploads' : './uploads');
   
   // CORS Configuration
-  env.CORS_ORIGIN = process.env.CORS_ORIGIN || '';
-  if (!env.CORS_ORIGIN.startsWith('http')) {
+  env.CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+  if (env.CORS_ORIGIN !== '*' && !env.CORS_ORIGIN.startsWith('http')) {
     throw new Error('Invalid CORS_ORIGIN: must start with http:// or https://');
   }
   
@@ -189,19 +176,19 @@ export function getEnv(): EnvConfig {
     PORT: parseInt(process.env.PORT || '3001', 10),
     NODE_ENV: (process.env.NODE_ENV || 'development') as EnvConfig['NODE_ENV'],
     CHAIN_ID: parseInt(process.env.CHAIN_ID || '8453', 10),
-    BASE_RPC_URL: process.env.BASE_RPC_URL || '',
+    BASE_RPC_URL: process.env.BASE_RPC_URL || 'https://mainnet.base.org',
     BASESCAN_API_KEY: process.env.BASESCAN_API_KEY,
     WORKER_PRIVATE_KEY: process.env.WORKER_PRIVATE_KEY || '',
-    FACILITATOR_URL: process.env.FACILITATOR_URL || '',
-    BACKEND_API_URL: process.env.BACKEND_API_URL || '',
+    FACILITATOR_URL: process.env.FACILITATOR_URL || 'https://b402-facilitator-base-62092339396.us-central1.run.app',
+    BACKEND_API_URL: process.env.BACKEND_API_URL || 'https://b402-base-api-62092339396.us-central1.run.app',
     PAYMENT_AMOUNT_USDC: process.env.PAYMENT_AMOUNT_USDC || '5',
     RECIPIENT_ADDRESS: process.env.RECIPIENT_ADDRESS || '',
     OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
     DATABASE_URL: process.env.DATABASE_URL,
     REDIS_URL: process.env.REDIS_URL,
     MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE || '5242880', 10),
-    UPLOAD_DIR: process.env.UPLOAD_DIR || './uploads',
-    CORS_ORIGIN: process.env.CORS_ORIGIN || '',
+    UPLOAD_DIR: process.env.UPLOAD_DIR || (process.env.VERCEL ? '/tmp/uploads' : './uploads'),
+    CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
   };
 }
 
